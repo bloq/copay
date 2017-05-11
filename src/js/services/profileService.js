@@ -210,6 +210,20 @@ angular.module('copayApp.services')
     var shouldSkipValidation = function(walletId) {
       return root.profile.isChecked(platformInfo.ua, walletId) || isIOS || isWP;
     }
+
+    var getClient = function(walletData, opts) {
+      var defaults = configService.getDefaults();
+      var bitcoreNetworks = bwcService.getBitcore().Networks;
+      var network = walletData && JSON.parse(walletData).network || opts.networkName || 'livenet';
+
+      if (!bitcoreNetworks[network] && defaults.wallet.network && network === defaults.wallet.network.name) {
+        bitcoreNetworks.add(defaults.wallet.network);
+        bwcService.Client.addBip44CoinType(network, defaults.wallet.network.coinType);
+      }
+
+      return bwcService.getClient(walletData, opts);
+    };
+
     // Used when reading wallets from the profile
     root.bindWallet = function(credentials, cb) {
       if (!credentials.walletId || !credentials.m)
@@ -222,8 +236,7 @@ angular.module('copayApp.services')
         return ((config.bwsFor && config.bwsFor[walletId]) || defaults.bws.url);
       };
 
-
-      var client = bwcService.getClient(JSON.stringify(credentials), {
+      var client = getClient(JSON.stringify(credentials), {
         bwsurl: getBWSURL(credentials.walletId),
       });
 
@@ -317,7 +330,7 @@ angular.module('copayApp.services')
 
     var seedWallet = function(opts, cb) {
       opts = opts || {};
-      var walletClient = bwcService.getClient(null, opts);
+      var walletClient = getClient(null, opts);
       var network = opts.networkName || 'livenet';
 
       if (opts.mnemonic) {
@@ -413,7 +426,7 @@ angular.module('copayApp.services')
 
     // joins and stores a wallet
     root.joinWallet = function(opts, cb) {
-      var walletClient = bwcService.getClient();
+      var walletClient = getClient(null, opts);
       $log.debug('Joining Wallet:', opts);
 
       try {
@@ -541,7 +554,7 @@ angular.module('copayApp.services')
 
     root.importWallet = function(str, opts, cb) {
 
-      var walletClient = bwcService.getClient(null, opts);
+      var walletClient = getClient(null, opts);
 
       $log.debug('Importing Wallet:', opts);
 
@@ -584,7 +597,7 @@ angular.module('copayApp.services')
     };
 
     root.importExtendedPrivateKey = function(xPrivKey, opts, cb) {
-      var walletClient = bwcService.getClient(null, opts);
+      var walletClient = getClient(null, opts);
       $log.debug('Importing Wallet xPrivKey');
 
       walletClient.importFromExtendedPrivateKey(xPrivKey, opts, function(err) {
@@ -610,7 +623,7 @@ angular.module('copayApp.services')
     };
 
     root.importMnemonic = function(words, opts, cb) {
-      var walletClient = bwcService.getClient(null, opts);
+      var walletClient = getClient(null, opts);
 
       $log.debug('Importing Wallet Mnemonic');
 
@@ -634,7 +647,7 @@ angular.module('copayApp.services')
     };
 
     root.importExtendedPublicKey = function(opts, cb) {
-      var walletClient = bwcService.getClient(null, opts);
+      var walletClient = getClient(null, opts);
       $log.debug('Importing Wallet XPubKey');
 
       walletClient.importFromExtendedPublicKey(opts.extendedPublicKey, opts.externalSource, opts.entropySource, {
@@ -676,10 +689,12 @@ angular.module('copayApp.services')
     };
 
     root.createDefaultWallet = function(cb) {
+      var defaults = configService.getDefaults();
       var opts = {};
       opts.m = 1;
       opts.n = 1;
-      opts.networkName = 'livenet';
+      opts.networkName = lodash.get(defaults, 'wallet.network.name', 'livenet');
+      opts.bwsurl = defaults.bws.url;
       root.createWallet(opts, cb);
     };
 

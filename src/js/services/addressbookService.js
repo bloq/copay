@@ -1,36 +1,43 @@
 'use strict';
 
-angular.module('copayApp.services').factory('addressbookService', function(bitcore, storageService, lodash) {
+angular.module('copayApp.services').factory('addressbookService', function(asyncService, bitcore, storageService, lodash) {
+  function getNetworks() {
+    return lodash.map(bitcore.Networks.list(), 'name');
+  }
+
   var root = {};
 
-  root.get = function(addr, cb) {
-    storageService.getAddressbook('testnet', function(err, ab) {
-      if (err) return cb(err);
-      if (ab) ab = JSON.parse(ab);
-      if (ab && ab[addr]) return cb(null, ab[addr]);
+  function getContact(addr, network, cb) {
+    storageService.getAddressbook(network, function(err, _ab) {
+      if (err) {
+        cb(err);
+        return;
+      }
+      var ab = _ab && JSON.parse(_ab) || {};
+      return cb(null, ab && ab[addr] || null);
+    });
+  }
 
-      storageService.getAddressbook('livenet', function(err, ab) {
-        if (err) return cb(err);
-        if (ab) ab = JSON.parse(ab);
-        if (ab && ab[addr]) return cb(null, ab[addr]);
-        return cb();
-      });
+  root.get = function(addr, cb) {
+    asyncService.map(getNetworks(), function (network, cb) {
+      getContact(addr, network, cb);
+    }, function (err, contacts) {
+      cb(err, lodash.find(contacts));
     });
   };
 
+  function listContacts(network, cb) {
+    storageService.getAddressbook(network, function(err, ab) {
+      ab = ab && JSON.parse(ab) || {};
+      cb(err, ab);
+    });
+  }
+
   root.list = function(cb) {
-    storageService.getAddressbook('testnet', function(err, ab) {
-      if (err) return cb('Could not get the Addressbook');
-
-      if (ab) ab = JSON.parse(ab);
-
-      ab = ab || {};
-      storageService.getAddressbook('livenet', function(err, ab2) {
-        if (ab2) ab2 = JSON.parse(ab2);
-
-        ab2 = ab2 || {};
-        return cb(err, lodash.defaults(ab2, ab));
-      });
+    asyncService.map(getNetworks(), listContacts, function (err, lists) {
+      cb(err, lists && lists.reduce(function (ab, list) {
+        return lodash.defaults(ab, list);
+      }, {}));
     });
   };
 
@@ -71,12 +78,7 @@ angular.module('copayApp.services').factory('addressbookService', function(bitco
   };
 
   root.removeAll = function() {
-    storageService.removeAddressbook('livenet', function(err) {
-      storageService.removeAddressbook('testnet', function(err) {
-        if (err) return cb('Error deleting addressbook');
-        return cb();
-      });
-    });
+    asyncService.map(getNetworks(), storageService.removeAddressbook, lodash.noop);
   };
 
   return root;

@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('copayApp.services').factory('feeService', function($log, $stateParams, bwcService, walletService, configService, gettext, lodash, txFormatService, gettextCatalog) {
+angular.module('copayApp.services').factory('feeService', function($log, $stateParams, bwcService, walletService, configService, gettext, lodash, txFormatService, gettextCatalog, asyncService) {
   var root = {};
 
   // Constant fee options to translate
@@ -43,24 +43,26 @@ angular.module('copayApp.services').factory('feeService', function($log, $stateP
   };
 
   root.getFeeLevels = function(cb) {
-    var walletClient = bwcService.getClient();
-    var unitName = configService.getSync().wallet.settings.unitName;
+    var config = configService.getSync();
+    var unitName = config.wallet.settings.unitName;
+    var walletClient = bwcService.getClient(null, {
+      bwsurl: config.bws.url
+    });
 
-    walletClient.getFeeLevels('livenet', function(errLivenet, levelsLivenet) {
-      walletClient.getFeeLevels('testnet', function(errTestnet, levelsTestnet) {
-        if (errLivenet || errTestnet) {
-          return cb(gettextCatalog.getString('Could not get dynamic fee'));
-        } else {
-          lodash.each(lodash.union(levelsLivenet, levelsTestnet), function(level) {
-            level.feePerKBUnit = txFormatService.formatAmount(level.feePerKB) + ' ' + unitName;
-          });
-        }
-
-        return cb(null, {
-          'livenet': levelsLivenet,
-          'testnet': levelsTestnet
-        });
+    var networks = lodash.map(bwcService.getBitcore().Networks.list(), 'name');
+    asyncService.map(networks, walletClient.getFeeLevels.bind(walletClient), function (err, levels) {
+      if (err) {
+        cb(gettextCatalog.getString('Could not get dynamic fee'));
+        return;
+      }
+      lodash.flatten(levels).forEach(function (level) {
+        level.feePerKBUnit = txFormatService.formatAmount(level.feePerKB) + ' ' + unitName;
       });
+      var feeLevels = {};
+      networks.forEach(function (network, i) {
+        feeLevels[network] = levels[i];
+      });
+      cb(null, feeLevels);
     });
   };
 
