@@ -1,9 +1,12 @@
 'use strict';
 
-angular.module('copayApp.services').factory('derivationPathHelper', function(lodash) {
+angular.module('copayApp.services').factory('derivationPathHelper', function(lodash, configService) {
+  var defaults = configService.getDefaults();
+
   var root = {};
 
-  root.default = "m/44'/0'/0'";
+  var coinType = lodash.get(defaults, 'wallet.network.coinType', 0);
+  root.default = "m/44'/" + coinType + "'/0'";
   root.defaultTestnet = "m/44'/1'/0'";
 
   root.parse = function(str) {
@@ -40,7 +43,10 @@ angular.module('copayApp.services').factory('derivationPathHelper', function(lod
         ret.networkName = 'testnet';
         break;
       default:
-        return false;
+        if (arr[2] !== lodash.get(defaults, 'wallet.network.coinType') + "'") {
+          return false;
+        }
+        ret.networkName = defaults.wallet.network.name;
     };
 
     var match = arr[3].match(/(\d+)'/);

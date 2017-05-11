@@ -118,12 +118,15 @@ angular.module('copayApp.controllers').controller('createController',
         return;
       }
 
+      var defaults = configService.getDefaults();
+      var networkName = lodash.get(defaults, 'wallet.network.name', 'livenet');
+
       var opts = {
         name: $scope.formData.walletName,
         m: $scope.formData.requiredCopayers,
         n: $scope.formData.totalCopayers,
         myName: $scope.formData.totalCopayers > 1 ? $scope.formData.myName : null,
-        networkName: $scope.formData.testnetEnabled ? 'testnet' : 'livenet',
+        networkName: $scope.formData.testnetEnabled ? 'testnet' : networkName,
         bwsurl: $scope.formData.bwsurl,
         singleAddress: $scope.formData.singleAddressEnabled,
         walletPrivKey: $scope.formData._walletPrivKey, // Only for testing

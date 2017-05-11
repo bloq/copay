@@ -56,20 +56,19 @@ angular.module('copayApp.controllers').controller('tabSendController', function(
 
     var networkResult = lodash.countBy($scope.wallets, 'network');
 
-    $scope.showTransferCard = $scope.hasWallets && (networkResult.livenet > 1 || networkResult.testnet > 1);
+    $scope.showTransferCard = $scope.hasWallets && lodash.some(networkResult, function (count) {
+      return count > 1;
+    });
 
     if ($scope.showTransferCard) {
       var walletsToTransfer = $scope.wallets;
-      if (!(networkResult.livenet > 1)) {
-        walletsToTransfer = lodash.filter(walletsToTransfer, function(item) {
-          return item.network == 'testnet';
-        });
-      }
-      if (!(networkResult.testnet > 1)) {
-        walletsToTransfer = lodash.filter(walletsToTransfer, function(item) {
-          return item.network == 'livenet';
-        });
-      }
+      Object.keys(networkResult).forEach(function (network) {
+        if (networkResult[network] < 2) {
+          walletsToTransfer = walletsToTransfer.filter(function (item) {
+            return item.network !== network;
+          });
+        }
+      });
       var walletList = [];
       lodash.each(walletsToTransfer, function(v) {
         walletList.push({

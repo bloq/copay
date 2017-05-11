@@ -1,13 +1,14 @@
 'use strict';
 angular.module('copayApp.directives')
-  .directive('validAddress', ['$rootScope', 'bitcore',
-    function($rootScope, bitcore) {
+  .directive('validAddress', ['$rootScope', 'bitcore', 'lodash',
+    function($rootScope, bitcore, lodash) {
       return {
         require: 'ngModel',
         link: function(scope, elem, attrs, ctrl) {
           var URI = bitcore.URI;
           var Address = bitcore.Address
           var validator = function(value) {
+            var networks = lodash.map(bitcore.Networks.list(), 'name');
 
             // Regular url
             if (/^https?:\/\//.test(value)) {
@@ -17,14 +18,15 @@ angular.module('copayApp.directives')
 
             // Bip21 uri
             if (/^bitcoin:/.test(value)) {
-              var uri, isAddressValidLivenet, isAddressValidTestnet;
+              var uri, isAddressValid;
               var isUriValid = URI.isValid(value);
               if (isUriValid) {
                 uri = new URI(value);
-                isAddressValidLivenet = Address.isValid(uri.address.toString(), 'livenet')
-                isAddressValidTestnet = Address.isValid(uri.address.toString(), 'testnet')
+                isAddressValid = lodash.some(networks, function (network) {
+                  return Address.isValid(uri.address.toString(), network);
+                });
               }
-              ctrl.$setValidity('validAddress', isUriValid && (isAddressValidLivenet || isAddressValidTestnet));
+              ctrl.$setValidity('validAddress', isUriValid && isAddressValid);
               return value;
             }
 
@@ -34,9 +36,10 @@ angular.module('copayApp.directives')
             }
 
             // Regular Address
-            var regularAddressLivenet = Address.isValid(value, 'livenet');
-            var regularAddressTestnet = Address.isValid(value, 'testnet');
-            ctrl.$setValidity('validAddress', (regularAddressLivenet || regularAddressTestnet));
+            var regularAddress = lodash.some(networks, function (network) {
+              return Address.isValid(value, network);
+            });
+            ctrl.$setValidity('validAddress', regularAddress);
             return value;
           };
 

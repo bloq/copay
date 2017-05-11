@@ -34,13 +34,14 @@ angular.module('copayApp.controllers').controller('preferencesFeeController', fu
       }
       $scope.feeLevels = levels;
       updateCurrentValues();
-      $scope.$apply();
     });
   });
 
   var updateCurrentValues = function() {
     if (lodash.isEmpty($scope.feeLevels) || lodash.isEmpty($scope.currentFeeLevel)) return;
-    var feeLevelValue = lodash.find($scope.feeLevels['livenet'], {
+    var defaults = configService.getDefaults();
+    var defaultNetwork = lodash.get(defaults, 'wallet.network.name', 'livenet');
+    var feeLevelValue = lodash.find($scope.feeLevels[defaultNetwork], {
       level: $scope.currentFeeLevel
     });
     if (lodash.isEmpty(feeLevelValue)) {
@@ -49,6 +50,7 @@ angular.module('copayApp.controllers').controller('preferencesFeeController', fu
       return;
     }
     $scope.feePerKBUnit = feeLevelValue.feePerKBUnit;
-    $scope.avgConfirmationTime = feeLevelValue.nbBlocks * 10;
+    var defaultConfirmationTime = lodash.get(defaults, 'wallet.network.confirmationTime', 10);
+    $scope.avgConfirmationTime = feeLevelValue.nbBlocks * defaultConfirmationTime;
   };
 });

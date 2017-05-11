@@ -153,9 +153,16 @@ angular.module('copayApp.controllers').controller('txDetailsController', functio
     });
   };
 
+  function getInsightUrl(network) {
+    var defaults = configService.getDefaults();
+    return network === 'testnet' ?
+      'https://test-insight.bitpay.com' :
+      lodash.get(defaults, 'insight.url', 'https://insight.bitpay.com');
+  }
+
   $scope.viewOnBlockchain = function() {
     var btx = $scope.btx;
-    var url = 'https://' + ($scope.getShortNetworkName() == 'test' ? 'test-' : '') + 'insight.bitpay.com/tx/' + btx.txid;
+    var url = getInsightUrl($scope.wallet.credentials.network) + '/tx/' + btx.txid;
     var optIn = true;
     var title = null;
     var message = gettextCatalog.getString('View Transaction on Insight');
