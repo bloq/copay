@@ -1,6 +1,6 @@
 'use strict';
 angular.module('copayApp.services')
-  .factory('profileService', function profileServiceFactory($rootScope, $timeout, $filter, $log, sjcl, lodash, storageService, bwcService, configService, gettextCatalog, bwcError, uxLanguage, platformInfo, txFormatService, $state) {
+  .factory('profileService', function profileServiceFactory($rootScope, $timeout, $filter, $log, sjcl, lodash, storageService, bwcService, configService, gettextCatalog, bwcError, uxLanguage, platformInfo, txFormatService, $state, customNetwork) {
 
 
     var isChromeApp = platformInfo.isChromeApp;
@@ -212,13 +212,12 @@ angular.module('copayApp.services')
     }
 
     var getClient = function(walletData, opts) {
-      var defaults = configService.getDefaults();
       var bitcoreNetworks = bwcService.getBitcore().Networks;
       var network = walletData && JSON.parse(walletData).network || opts.networkName || 'livenet';
 
-      if (!bitcoreNetworks[network] && defaults.wallet.network && network === defaults.wallet.network.name) {
-        bitcoreNetworks.add(defaults.wallet.network);
-        bwcService.Client.addBip44CoinType(network, defaults.wallet.network.coinType);
+      if (!bitcoreNetworks[network] && network === lodash.get(customNetwork, 'name')) {
+        bitcoreNetworks.add(customNetwork);
+        bwcService.Client.addBip44CoinType(network, customNetwork.coinType);
       }
 
       return bwcService.getClient(walletData, opts);
@@ -689,12 +688,11 @@ angular.module('copayApp.services')
     };
 
     root.createDefaultWallet = function(cb) {
-      var defaults = configService.getDefaults();
       var opts = {};
       opts.m = 1;
       opts.n = 1;
-      opts.networkName = lodash.get(defaults, 'wallet.network.name', 'livenet');
-      opts.bwsurl = defaults.bws.url;
+      opts.networkName = lodash.get(customNetwork, 'name', 'livenet');
+      opts.bwsurl = configService.getDefaults().bws.url;
       root.createWallet(opts, cb);
     };
 
