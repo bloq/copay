@@ -99,6 +99,16 @@ try {
 }
 fs.writeFileSync('../externalServices.json', externalServices, 'utf8');
 
+var customNetworkFile = fs.readFileSync('./customNetwork.js', 'utf8');
+try {
+  var customNetworkJson = fs.readFileSync('../customNetwork.json', 'utf8');
+  customNetworkFile = customNetworkFile.replace('null', customNetworkJson);
+  console.log('Using default network:', JSON.parse(customNetworkJson).name);
+} catch (err) {
+  console.log('Using default network: livenet');
+}
+fs.writeFileSync('../src/js/constants/customNetwork.js', customNetworkFile, 'utf8');
+
 function copyDir(from, to) {
   console.log('Copying dir ' + from + ' to ' + to);
   if (fs.existsSync(to)) fs.removeSync(to); // remove previous app directory

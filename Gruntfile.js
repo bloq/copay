@@ -87,7 +87,8 @@ module.exports = function(grunt) {
           'src/js/routes.js',
           'src/js/services/*.js',
           'src/js/models/*.js',
-          'src/js/controllers/**/*.js'
+          'src/js/controllers/**/*.js',
+          'src/js/constants/*.js'
         ],
         tasks: ['concat:js']
       }
@@ -141,6 +142,7 @@ module.exports = function(grunt) {
           'src/js/models/*.js',
           'src/js/services/*.js',
           'src/js/controllers/**/*.js',
+          'src/js/constants/*.js',
           'src/js/translations.js',
           'src/js/appConfig.js',
           'src/js/externalServices.js',

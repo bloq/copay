@@ -154,10 +154,9 @@ angular.module('copayApp.controllers').controller('txDetailsController', functio
   };
 
   function getInsightUrl(network) {
-    var defaults = configService.getDefaults();
     return network === 'testnet' ?
       'https://test-insight.bitpay.com' :
-      lodash.get(defaults, 'insight.url', 'https://insight.bitpay.com');
+      lodash.get(configService.getDefaults(), 'insight.url', 'https://insight.bitpay.com');
   }
 
   $scope.viewOnBlockchain = function() {

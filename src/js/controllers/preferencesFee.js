@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('copayApp.controllers').controller('preferencesFeeController', function($scope, $timeout, $ionicHistory, lodash, gettextCatalog, configService, feeService, ongoingProcess, popupService) { 
+angular.module('copayApp.controllers').controller('preferencesFeeController', function($scope, $timeout, $ionicHistory, lodash, gettextCatalog, configService, feeService, ongoingProcess, popupService, customNetwork) {
 
   $scope.save = function(newFee) {
     var opts = {
@@ -39,9 +39,8 @@ angular.module('copayApp.controllers').controller('preferencesFeeController', fu
 
   var updateCurrentValues = function() {
     if (lodash.isEmpty($scope.feeLevels) || lodash.isEmpty($scope.currentFeeLevel)) return;
-    var defaults = configService.getDefaults();
-    var defaultNetwork = lodash.get(defaults, 'wallet.network.name', 'livenet');
-    var feeLevelValue = lodash.find($scope.feeLevels[defaultNetwork], {
+    var networkName = lodash.get(customNetwork, 'name', 'livenet');
+    var feeLevelValue = lodash.find($scope.feeLevels[networkName], {
       level: $scope.currentFeeLevel
     });
     if (lodash.isEmpty(feeLevelValue)) {
@@ -50,7 +49,7 @@ angular.module('copayApp.controllers').controller('preferencesFeeController', fu
       return;
     }
     $scope.feePerKBUnit = feeLevelValue.feePerKBUnit;
-    var defaultConfirmationTime = lodash.get(defaults, 'wallet.network.confirmationTime', 10);
-    $scope.avgConfirmationTime = feeLevelValue.nbBlocks * defaultConfirmationTime;
+    var confirmationTime = lodash.get(customNetwork, 'confirmationTime', 10);
+    $scope.avgConfirmationTime = feeLevelValue.nbBlocks * confirmationTime;
   };
 });

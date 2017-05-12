@@ -107,3 +107,6 @@ www/index.html
 /GoogleService-Info.plist
 /google-services.json
 
+# Custom network parameters
+customNetwork.json
+src/js/constants/customNetwork.js
